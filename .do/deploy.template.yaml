@@ -1,0 +1,23 @@
+spec:
+  name: dct-gov10-pweb-r1-signer
+  region: sgp
+  alerts:
+    - rule: DEPLOYMENT_FAILED
+    - rule: DOMAIN_FAILED
+  ingress:
+    rules:
+      - component:
+          name: pweb-r1-signer
+        match:
+          path:
+            prefix: /
+  static_sites:
+    - name: pweb-r1-signer
+      environment_slug: html
+      github:
+        repo: dctpeos/dct-gov10-pweb-r1-signer-source
+        branch: pweb-r1-pinned
+        deploy_on_push: false
+      source_dir: /signer
+      output_dir: /public
+      index_document: index.html
