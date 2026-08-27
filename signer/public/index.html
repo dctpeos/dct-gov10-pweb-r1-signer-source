@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'none'; img-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; form-action 'none'; base-uri 'none'">
+  <meta http-equiv="Cache-Control" content="no-store">
+  <title>DCT Synthetic Offline Signer R1</title>
+  <style>
+    :root { color-scheme: light dark; font: 16px/1.45 -apple-system, BlinkMacSystemFont, sans-serif; }
+    body { max-width: 44rem; margin: 0 auto; padding: 1rem; }
+    .warning { border: 2px solid #b45309; border-radius: .75rem; padding: .85rem; background: #fef3c7; color: #451a03; }
+    .meta { overflow-wrap: anywhere; font: 12px/1.4 ui-monospace, monospace; }
+    label { display: block; margin-top: 1rem; font-weight: 650; }
+    textarea, input, select, button { box-sizing: border-box; width: 100%; margin-top: .35rem; padding: .75rem; font: inherit; }
+    textarea { min-height: 8rem; font-family: ui-monospace, monospace; }
+    input[type="checkbox"] { width: auto; }
+    .check { display: flex; gap: .6rem; align-items: start; font-weight: 500; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-top: 1rem; }
+    [data-kind="pass"] { color: #15803d; font-weight: 700; }
+    [data-kind="fail"] { color: #b91c1c; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>DCT synthetic offline signer</h1>
+  <div class="warning">
+    <strong>PUBLIC SYNTHETIC WORDS ONLY.</strong> This reviewed candidate cannot
+    issue GOV-10. Never enter real Owner recovery words into this R1 build.
+  </div>
+
+  <p class="meta">Profile: <span id="profile-id"></span></p>
+  <p class="meta">Version: <span id="profile-version"></span></p>
+  <p class="meta">Classification: <span id="classification"></span></p>
+  <p class="meta">Approved core identity: <span id="core-identity"></span></p>
+  <p>Runtime capability: <span id="capability">checking…</span></p>
+
+  <label for="copy-label">Physical copy under rehearsal</label>
+  <select id="copy-label">
+    <option value="COPY_A">COPY_A</option>
+    <option value="COPY_B">COPY_B</option>
+  </select>
+
+  <label for="decision-digest">Fixed public synthetic Decision digest</label>
+  <input id="decision-digest" readonly autocomplete="off">
+
+  <label for="mnemonic">Enter the 24 public synthetic words manually</label>
+  <textarea id="mnemonic" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false"></textarea>
+
+  <label class="check">
+    <input id="airplane-confirmed" type="checkbox">
+    <span>I confirm Airplane Mode is on and Wi-Fi and Bluetooth are off before any words are entered.</span>
+  </label>
+
+  <div class="actions">
+    <button id="execute" type="button" disabled>Recover and sign synthetic vector</button>
+    <button id="clear" type="button">Clear ceremony state</button>
+  </div>
+
+  <p id="status">Waiting for runtime capability check.</p>
+  <label for="output">Public output only</label>
+  <textarea id="output" readonly></textarea>
+
+  <p><strong>Cleanup:</strong> clear, close this page, remove Safari website data
+  for the signer origin, and only then reconnect networking.</p>
+  <script type="module" src="./app.mjs"></script>
+</body>
+</html>
