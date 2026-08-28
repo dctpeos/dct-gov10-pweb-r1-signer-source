@@ -1,7 +1,7 @@
 import { BIP39_ENGLISH_WORDS, BIP39_WORDLIST_SHA256 } from "./bip39_english.mjs";
 
 export const PROFILE_ID = "DCT_GOV10_PERSONAL_USE_EPHEMERAL_OFFLINE_WEB_SIGNING_PROFILE_R1";
-export const PROFILE_VERSION = "1.0.1";
+export const PROFILE_VERSION = "1.0.2";
 export const CLASSIFICATION = "SYNTHETIC_TEST_ONLY_NOT_OWNER_KEY_NOT_OWNER_ISSUANCE";
 export const DCT_SIGNATURE_DOMAIN = "DCT_STAGE3_V2_OWNER_ISSUANCE_DECISION_SIGNATURE_R1";
 export const SYNTHETIC_DECISION_DIGEST = "854aa9befe1104bbe4f9d9c2758ce619fb4c645889e800beba022d18710189d5";
@@ -206,8 +206,12 @@ function pointAdd(left, right) {
 }
 
 function scalarMultiplyBase(scalar) {
+  return scalarMultiply(BASE_POINT, scalar);
+}
+
+function scalarMultiply(point, scalar) {
   let value = scalar;
-  let addend = BASE_POINT;
+  let addend = point;
   let result = IDENTITY_POINT;
   while (value > 0n) {
     if (value & 1n) result = pointAdd(result, addend);
@@ -215,6 +219,10 @@ function scalarMultiplyBase(scalar) {
     value >>= 1n;
   }
   return result;
+}
+
+function pointEqual(left, right) {
+  return mod(left.x - right.x) === 0n && mod(left.y - right.y) === 0n;
 }
 
 function littleEndianToBigInt(bytes) {
@@ -262,6 +270,43 @@ function encodePoint(point) {
   const encoded = bigIntToLittleEndian(point.y, 32);
   encoded[31] |= Number((point.x & 1n) << 7n);
   return encoded;
+}
+
+function decodePointStrict(encoded) {
+  if (!(encoded instanceof Uint8Array) || encoded.length !== 32) {
+    throw new PwebQualificationError("ED25519_ENCODED_POINT_LENGTH_MISMATCH");
+  }
+  const canonicalInput = encoded.slice();
+  const sign = canonicalInput[31] >>> 7;
+  canonicalInput[31] &= 0x7f;
+  const y = littleEndianToBigInt(canonicalInput);
+  if (y >= FIELD_P) {
+    throw new PwebQualificationError("ED25519_NONCANONICAL_Y_ENCODING");
+  }
+  const yy = mod(y * y);
+  const denominator = mod(EDWARDS_D * yy + 1n);
+  if (denominator === 0n) {
+    throw new PwebQualificationError("ED25519_POINT_DENOMINATOR_ZERO");
+  }
+  const xSquared = mod((yy - 1n) * inverse(denominator));
+  let x = powMod(xSquared, (FIELD_P + 3n) / 8n);
+  if (mod(x * x - xSquared) !== 0n) x = mod(x * SQRT_M1);
+  if (mod(x * x - xSquared) !== 0n) {
+    throw new PwebQualificationError("ED25519_POINT_NOT_ON_CURVE");
+  }
+  if (x === 0n && sign === 1) {
+    throw new PwebQualificationError("ED25519_NONCANONICAL_X_SIGN");
+  }
+  if (Number(x & 1n) !== sign) x = FIELD_P - x;
+  const point = { x, y };
+  if (bytesToHex(encodePoint(point)) !== bytesToHex(encoded)) {
+    throw new PwebQualificationError("ED25519_POINT_ENCODING_NOT_CANONICAL");
+  }
+  return point;
+}
+
+function isSmallOrderPoint(point) {
+  return pointEqual(scalarMultiply(point, 8n), IDENTITY_POINT);
 }
 
 async function signEd25519PlatformPublicDiagnosticOnly(privateSeed, message) {
@@ -315,8 +360,8 @@ export async function platformEd25519PublicDiagnostic() {
       platform_signature_exact_rfc8032_first: bytesToHex(first) === expectedSignatureHex,
       platform_signature_exact_rfc8032_second: bytesToHex(second) === expectedSignatureHex,
       platform_repeated_signature_byte_equal: bytesToHex(first) === bytesToHex(second),
-      platform_signature_verifies_first: await verifyEd25519(expectedPublic, first, empty),
-      platform_signature_verifies_second: await verifyEd25519(expectedPublic, second, empty),
+      platform_signature_verifies_first: await verifyEd25519PlatformDiagnosticOnly(expectedPublic, first, empty),
+      platform_signature_verifies_second: await verifyEd25519PlatformDiagnosticOnly(expectedPublic, second, empty),
     });
   } catch (error) {
     return Object.freeze({
@@ -329,13 +374,39 @@ export async function platformEd25519PublicDiagnostic() {
   }
 }
 
-export async function verifyEd25519(publicKey, signature, message) {
+async function verifyEd25519PlatformDiagnosticOnly(publicKey, signature, message) {
   const subtle = requireWebCrypto();
   try {
     const key = await subtle.importKey("raw", publicKey, { name: "Ed25519" }, false, ["verify"]);
     return await subtle.verify("Ed25519", key, signature, message);
   } catch (error) {
     throw new PwebQualificationError(`WEBCRYPTO_ED25519_VERIFY_FAILURE:${error?.name || "ERROR"}`);
+  }
+}
+
+export async function verifyEd25519DeterministicSyntheticOnly(publicKey, signature, message) {
+  if (!(publicKey instanceof Uint8Array) || publicKey.length !== 32 ||
+      !(signature instanceof Uint8Array) || signature.length !== 64 ||
+      !(message instanceof Uint8Array)) {
+    return false;
+  }
+  try {
+    const encodedR = signature.slice(0, 32);
+    const encodedS = signature.slice(32);
+    const scalarS = littleEndianToBigInt(encodedS);
+    if (scalarS >= SCALAR_L) return false;
+    const publicPoint = decodePointStrict(publicKey);
+    const rPoint = decodePointStrict(encodedR);
+    if (isSmallOrderPoint(publicPoint) || isSmallOrderPoint(rPoint)) return false;
+    const challengeDigest = await digest("SHA-512", concatBytes(encodedR, publicKey, message));
+    const challenge = littleEndianToBigInt(challengeDigest) % SCALAR_L;
+    challengeDigest.fill(0);
+    const left = scalarMultiplyBase(scalarS);
+    const right = pointAdd(rPoint, scalarMultiply(publicPoint, challenge));
+    return pointEqual(left, right);
+  } catch (error) {
+    if (error instanceof PwebQualificationError) return false;
+    throw error;
   }
 }
 
@@ -370,8 +441,8 @@ export async function runtimeCapabilitySelfTest() {
     if (bytesToHex(signature) !== expectedSignature) {
       throw new PwebQualificationError("RFC8032_SIGNATURE_KNOWN_ANSWER_MISMATCH");
     }
-    if (!(await verifyEd25519(expectedPublic, signature, empty))) {
-      throw new PwebQualificationError("RFC8032_WEBCRYPTO_VERIFY_FAILURE");
+    if (!(await verifyEd25519DeterministicSyntheticOnly(expectedPublic, signature, empty))) {
+      throw new PwebQualificationError("RFC8032_INTERNAL_VERIFY_FAILURE");
     }
     const wordlistHash = await sha256Hex(textEncoder.encode(`${BIP39_ENGLISH_WORDS.join("\n")}\n`));
     if (wordlistHash !== BIP39_WORDLIST_SHA256) {
@@ -380,7 +451,8 @@ export async function runtimeCapabilitySelfTest() {
     return {
       status: "PASS_RUNTIME_CAPABILITY_SYNTHETIC_ONLY",
       deterministic_synthetic_ed25519: true,
-      webcrypto_ed25519_verify: true,
+      internal_ed25519_verify: true,
+      webcrypto_ed25519_diagnostic_advisory_only: true,
       rfc8032_vector: true,
       pinned_wordlist: true,
       authority_granted: false,
@@ -412,7 +484,7 @@ export async function recoverAndSignSyntheticTestOnly({ copyLabel, mnemonic, dec
     }
     const preimage = dctSigningPreimage(decisionDigest);
     const signature = await signEd25519DeterministicSyntheticOnly(privateSeed, preimage);
-    if (!(await verifyEd25519(publicKey, signature, preimage))) {
+    if (!(await verifyEd25519DeterministicSyntheticOnly(publicKey, signature, preimage))) {
       throw new PwebQualificationError("DCT_SIGNATURE_VERIFICATION_FAILURE");
     }
     const signatureBase64url = canonicalBase64url(signature);

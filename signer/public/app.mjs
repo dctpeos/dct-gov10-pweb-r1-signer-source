@@ -10,7 +10,7 @@ import {
 
 // Filled deterministically after the reviewed cryptographic core files are
 // finalized. This identifies the core, not the outer ZIP or live page bytes.
-export const APPROVED_CORE_IDENTITY_SHA256 = "8ff1ce8447acfe6094e26f023e28b3c50ebbf7f8f986a7de52ff9e025191fe85";
+export const APPROVED_CORE_IDENTITY_SHA256 = "c5ac37fe3ed09d41d47bf318133c511dc5eaa2b7d58d47de4a7cbe636f80e7b6";
 
 const byId = (id) => document.getElementById(id);
 const capability = byId("capability");
@@ -52,7 +52,7 @@ try {
   const result = await runtimeCapabilitySelfTest();
   runtimePass = result.status === "PASS_RUNTIME_CAPABILITY_SYNTHETIC_ONLY";
   capability.textContent = runtimePass
-    ? "PASS — deterministic RFC8032 signer + WebCrypto verify/PBKDF2/HMAC/digest known-answer checks"
+    ? "PASS — deterministic RFC8032 signer + strict internal RFC8032 verify/PBKDF2/HMAC/digest known-answer checks; WebCrypto Ed25519 is diagnostic only"
     : "FAIL — unsupported runtime";
   capability.dataset.kind = runtimePass ? "pass" : "fail";
 } catch (error) {
