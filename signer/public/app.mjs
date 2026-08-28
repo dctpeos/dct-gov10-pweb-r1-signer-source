@@ -3,16 +3,18 @@ import {
   PROFILE_ID,
   PROFILE_VERSION,
   SYNTHETIC_DECISION_DIGEST,
+  platformEd25519PublicDiagnostic,
   recoverAndSignSyntheticTestOnly,
   runtimeCapabilitySelfTest,
 } from "./signer_core.mjs";
 
 // Filled deterministically after the reviewed cryptographic core files are
 // finalized. This identifies the core, not the outer ZIP or live page bytes.
-export const APPROVED_CORE_IDENTITY_SHA256 = "1d20039c50611b3147173dbd993bef5f85fda7755d14010fef61b6681b9391a9";
+export const APPROVED_CORE_IDENTITY_SHA256 = "8ff1ce8447acfe6094e26f023e28b3c50ebbf7f8f986a7de52ff9e025191fe85";
 
 const byId = (id) => document.getElementById(id);
 const capability = byId("capability");
+const platformDiagnostic = byId("platform-diagnostic");
 const status = byId("status");
 const mnemonic = byId("mnemonic");
 const output = byId("output");
@@ -41,10 +43,16 @@ export function clearSensitiveState() {
 
 let runtimePass = false;
 try {
+  const publicDiagnostic = await platformEd25519PublicDiagnostic();
+  platformDiagnostic.value = JSON.stringify({
+    ...publicDiagnostic,
+    navigator_user_agent: navigator.userAgent,
+    navigator_platform: navigator.platform,
+  }, null, 2);
   const result = await runtimeCapabilitySelfTest();
   runtimePass = result.status === "PASS_RUNTIME_CAPABILITY_SYNTHETIC_ONLY";
   capability.textContent = runtimePass
-    ? "PASS — WebCrypto Ed25519/PBKDF2/HMAC/digest known-answer checks"
+    ? "PASS — deterministic RFC8032 signer + WebCrypto verify/PBKDF2/HMAC/digest known-answer checks"
     : "FAIL — unsupported runtime";
   capability.dataset.kind = runtimePass ? "pass" : "fail";
 } catch (error) {

@@ -1,17 +1,35 @@
 {
-  "artifact_type": "DCT_GOV10_PWEB_STATIC_SIGNER_BUNDLE_IDENTITY_R1",
-  "schema_version": "1.0.0",
-  "profile_id": "DCT_GOV10_PERSONAL_USE_EPHEMERAL_OFFLINE_WEB_SIGNING_PROFILE_R1",
-  "classification": "SYNTHETIC_TEST_ONLY_NOT_OWNER_KEY_NOT_OWNER_ISSUANCE",
-  "domain_tag": "DCT_GOV10_PERSONAL_USE_EPHEMERAL_OFFLINE_WEB_SIGNER_BUNDLE_IDENTITY_R1",
-  "separator_hex": "00",
+  "artifact_type": "DCT_GOV10_PWEB_STATIC_SIGNER_BUNDLE_REPAIR_CANDIDATE_R1",
+  "bundle_identity_sha256": "9c753a38f9cd33f32d0ee504f2d0926ec70061dd70b26003ab53eb70d7ea6d18",
   "canonicalization": "UTF8_JSON_SORTED_KEYS_COMPACT_NO_TRAILING_NEWLINE",
-  "core_identity_sha256": "1d20039c50611b3147173dbd993bef5f85fda7755d14010fef61b6681b9391a9",
+  "classification": "SYNTHETIC_TEST_ONLY_NOT_OWNER_KEY_NOT_OWNER_ISSUANCE",
+  "core_identity_domain_tag": "DCT_GOV10_PERSONAL_USE_EPHEMERAL_OFFLINE_WEB_SIGNER_CORE_IDENTITY_REPAIR_CANDIDATE_R1",
+  "core_identity_sha256": "8ff1ce8447acfe6094e26f023e28b3c50ebbf7f8f986a7de52ff9e025191fe85",
+  "domain_tag": "DCT_GOV10_PERSONAL_USE_EPHEMERAL_OFFLINE_WEB_SIGNER_BUNDLE_IDENTITY_REPAIR_CANDIDATE_R1",
   "files": [
-    {"path": "WEB_SIGNER/app.mjs", "sha256": "2d818b596a27dbd774ab975af62f328732a98d7d43b908accec48a9bdfcb7e42"},
-    {"path": "WEB_SIGNER/bip39_english.mjs", "sha256": "9383c3f847d226ad6b141cb8d436c3b9bc7bf98727f649b38a979a19d9aa34f4"},
-    {"path": "WEB_SIGNER/index.html", "sha256": "f8107567759da57663c9cb7b65613ee72c059843f1de97638b4c3aaa5d79267b"},
-    {"path": "WEB_SIGNER/signer_core.mjs", "sha256": "5cce9d7b9ea7d0ce95040c0a3734597484fdbbbe99f2b1df7aaf507966bdaf01"}
+    {
+      "path": "app.mjs",
+      "sha256": "ade7e185ed19815923eb14d7c2416859cd5743888e89866fc445496b6f289c92",
+      "size_bytes": 3997
+    },
+    {
+      "path": "bip39_english.mjs",
+      "sha256": "9383c3f847d226ad6b141cb8d436c3b9bc7bf98727f649b38a979a19d9aa34f4",
+      "size_bytes": 13295
+    },
+    {
+      "path": "index.html",
+      "sha256": "bec78c9408c9749e9f92f1626680d27e42bb0d7af42a238621c8c904bd3b1ee6",
+      "size_bytes": 3664
+    },
+    {
+      "path": "signer_core.mjs",
+      "sha256": "f29cea9a149931c0c5721d2031fc0d500917a54c31752f2fe8a18f5c3760ba1b",
+      "size_bytes": 16885
+    }
   ],
-  "bundle_identity_sha256": "7bddc92be7b16c327135bb52eb9f5b21bdac8353867a8df0681c4aa97926ccb6"
+  "profile_id": "DCT_GOV10_PERSONAL_USE_EPHEMERAL_OFFLINE_WEB_SIGNING_PROFILE_R1",
+  "profile_version": "1.0.1",
+  "schema_version": "1.0.0",
+  "separator_hex": "00"
 }
